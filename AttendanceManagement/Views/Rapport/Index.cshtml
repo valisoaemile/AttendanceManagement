@@ -1,0 +1,72 @@
+﻿@model List<AttendanceManagement.Models.Pointage>
+@{
+    ViewData["Title"] = "Rapports & Export";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark m-0">Rapports & Exportation</h3>
+        <p class="text-muted small m-0">Visualisation du fichier final et téléchargement au format CSV</p>
+    </div>
+    <div>
+        <a asp-action="ExporterCsv" class="btn btn-success fw-bold px-4 py-2 shadow-sm">
+            <i class="bi bi-file-earmark-excel me-2"></i> Telecharger / Enregistrer Fichier CSV
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-3">
+    <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center py-2 px-3">
+        <span class="fs-6"><i class="bi bi-file-earmark-check me-2"></i> Rapport Final des Pointages</span>
+        <span class="badge bg-secondary px-3 py-2">Total: @Model.Count entrées</span>
+    </div>
+
+    <div class="card-body p-0 table-responsive" style="max-height: 550px; overflow-y: auto;">
+        <table class="table table-hover table-striped align-middle m-0" style="font-size: 0.88rem;">
+            <thead class="table-light sticky-top border-bottom">
+                <tr>
+                    <th class="py-3 ps-3">Date</th>
+                    <th class="py-3">Porte</th>
+                    <th class="py-3">ID de l'Équipement</th>
+                    <th class="py-3">Équipement</th>
+                    <th class="py-3">Group Utilisateur</th>
+                    <th class="py-3">Utilisateur</th>
+                    <th class="py-3 pe-3">Évènement</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            Aucun pointage disponible pour le rapport.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-semibold text-secondary">
+                                @item.DatePointage.ToString("yyyy-MM-dd") @item.HeurePointage.ToString(@"hh\:mm\:ss")
+                            </td>
+                            <td>PORTE SORTIE</td>
+                            <td>541652289</td>
+                            <td>@(string.IsNullOrEmpty(item.Equipement) ? "BioEntry R2 CENTRE" : item.Equipement)</td>
+                            <td>All Users</td>
+                            <td class="fw-bold text-dark">
+                                @(item.Employe != null ? $"{item.Employe.Matricule}({item.Employe.Nom})" : "")
+                            </td>
+                            <td class="pe-3">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    Succès de l'Authentification
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

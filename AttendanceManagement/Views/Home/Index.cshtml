@@ -1,0 +1,180 @@
+﻿@model List<AttendanceManagement.Models.Pointage>
+@{
+    ViewData["Title"] = "Tableau de Bord";
+    var anomalies = ViewBag.Anomalies as List<AttendanceManagement.Models.Anomalie> ?? new List<AttendanceManagement.Models.Anomalie>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold text-dark m-0">Tableau de Bord</h3>
+        <p class="text-muted small m-0">Suivi des pointages et correction des anomalies</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" asp-controller="Import" class="btn btn-outline-primary fw-bold">
+            <i class="bi bi-upload me-1"></i> Importer CSV
+        </a>
+        <a asp-action="Rapports" asp-controller="Home" class="btn btn-success fw-bold">
+            <i class="bi bi-file-earmark-text me-1"></i> Voir le Rapport
+        </a>
+    </div>
+</div>
+
+<!-- SECTION ANOMALIES -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header @(anomalies.Count > 0 ? "bg-danger" : "bg-success") text-white fw-bold d-flex justify-content-between align-items-center py-2 px-3">
+        <span class="fs-6">
+            <i class="bi @(anomalies.Count > 0 ? "bi-exclamation-triangle-fill" : "bi-check-circle-fill") me-2"></i>
+            @(anomalies.Count > 0 ? $"Erreurs / Anomalies Détectées ({anomalies.Count})" : "Aucune anomalie détectée - Tous les pointages sont valides !")
+        </span>
+        <span class="badge bg-white @(anomalies.Count > 0 ? "text-danger" : "text-success") fw-bold px-3 py-2">
+            @(anomalies.Count > 0 ? "Action requise" : "Prêt pour export")
+        </span>
+    </div>
+
+    @if (anomalies.Count > 0)
+    {
+        <div class="card-body bg-light p-3">
+            <div class="row g-3">
+                @foreach (var ano in anomalies)
+                {
+                    // Détermination des couleurs selon le type d'anomalie
+                    string cardBorderClass = "border-danger";
+                    string textClass = "text-danger";
+                    string btnClass = "btn-danger";
+
+                    if (ano.TypeAnomalie == "HEURE_INSUFFISANTE")
+                    {
+                        // Couleur Orange / Jaune
+                        cardBorderClass = "border-warning";
+                        textClass = "text-warning-emphasis";
+                        btnClass = "btn-warning text-dark";
+                    }
+                    else if (ano.TypeAnomalie == "DOUBLON_EQUIPEMENT")
+                    {
+                        // Couleur Bleue
+                        cardBorderClass = "border-primary";
+                        textClass = "text-primary";
+                        btnClass = "btn-primary";
+                    }
+                    else if (ano.TypeAnomalie == "DOUBLE_EQUIPEMENT_ET_HEURE_INSUFFISANTE")
+                    {
+                        // Couleur Rouge
+                        cardBorderClass = "border-danger";
+                        textClass = "text-danger";
+                        btnClass = "btn-danger";
+                    }
+
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 @cardBorderClass shadow-sm" style="border-width: 2px;">
+                            <div class="card-body d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <div class="fw-bold text-dark fs-6">
+                                        @ano.Matricule (@ano.NomEmploye)
+                                    </div>
+
+                                    <div class="@textClass small mt-2 fw-bold">
+                                        <i class="bi bi-exclamation-circle me-1"></i> @ano.Message
+                                    </div>
+
+                                    <div class="text-muted small mt-1">
+                                        <i class="bi bi-calendar3 me-1"></i> Date: @ano.DatePointage.ToString("yyyy-MM-dd")
+                                    </div>
+                                </div>
+                                <div class="mt-3 pt-2 border-top">
+                                    <a asp-action="VoirPointage" 
+                                       asp-route-employeId="@ano.EmployeId" 
+                                       asp-route-date="@ano.DatePointage.ToString("yyyy-MM-dd")" 
+                                       class="btn @btnClass btn-sm fw-bold w-100">
+                                        <i class="bi bi-pencil-square me-1"></i> Régler l'anomalie
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- TABLEAU DE BORD PRINCIPAL -->
+<div class="card shadow-sm border-0 rounded-3">
+    <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center py-2 px-3">
+        <span class="fs-6"><i class="bi bi-list-task me-2"></i> Historique Global des Pointages</span>
+        <span class="badge bg-secondary px-3 py-2">Total: @Model.Count entrées</span>
+    </div>
+
+    <div class="card-body p-0 table-responsive" style="max-height: 550px; overflow-y: auto;">
+        <table class="table table-hover table-striped align-middle m-0" style="font-size: 0.88rem;">
+            <thead class="table-light sticky-top border-bottom">
+                <tr>
+                    <th class="py-3 ps-3">Date</th>
+                    <th class="py-3">Porte</th>
+                    <th class="py-3">ID de l'Équipement</th>
+                    <th class="py-3">Équipement</th>
+                    <th class="py-3">Group Utilisateur</th>
+                    <th class="py-3">Utilisateur</th>
+                    <th class="py-3 pe-3">Évènement</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-4 d-block mb-1"></i>
+                            Aucun pointage trouvé dans la base de données.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var item in Model)
+                    {
+                        string evtText = string.IsNullOrWhiteSpace(item.Evenement) ? "Succès de l'Authentification" : item.Evenement;
+                        bool hasEmploye = item.Employe != null && item.Employe.Matricule != "INCONNU" && !string.IsNullOrWhiteSpace(item.Employe.Nom);
+
+                        <tr>
+                            <td class="ps-3 fw-semibold text-secondary">
+                                @item.DatePointage.ToString("yyyy-MM-dd") @item.HeurePointage.ToString(@"hh\:mm\:ss")
+                            </td>
+                            <td>@(hasEmploye ? (string.IsNullOrEmpty(item.Porte) ? "PORTE SORTIE" : item.Porte) : "")</td>
+                            <td>@item.IdEquipement</td>
+                            <td>@item.Equipement</td>
+                            <td>@(hasEmploye ? "Tous les Utilisateurs" : "")</td>
+                            <td class="fw-bold text-dark">
+                                @(hasEmploye ? $"{item.Employe?.Matricule}({item.Employe?.Nom})" : "")
+                            </td>
+                            <td class="pe-3">
+                                @if (evtText.Contains("Succès") || evtText.Contains("Fingerprint"))
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        @evtText
+                                    </span>
+                                }
+                                else if (evtText.Contains("déverrouillée") || evtText.Contains("déverrouillé"))
+                                {
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                        @evtText
+                                    </span>
+                                }
+                                else if (evtText.Contains("Verrouillée") || evtText.Contains("verrouillée") || evtText.Contains("Echec"))
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                        @evtText
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-dark border border-secondary-subtle px-2 py-1">
+                                        @evtText
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Attendance Management</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #f8f9fa;
+            }
+
+            .topbar {
+                background-color: #005a5b;
+                color: white;
+                padding: 10px 20px;
+            }
+
+            .sidebar {
+                background-color: #006666;
+                min-height: calc(100vh - 51px);
+                color: white;
+                padding-top: 15px;
+            }
+
+                .sidebar .nav-link {
+                    color: rgba(255, 255, 255, 0.85);
+                    padding: 12px 20px;
+                    font-weight: 500;
+                }
+
+                    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+                        color: white;
+                        background-color: rgba(255, 255, 255, 0.1);
+                        border-left: 4px solid #00f2fe;
+                    }
+
+                    .sidebar .nav-link i {
+                        margin-right: 10px;
+                    }
+
+            .sidebar-heading {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                padding: 10px 20px;
+                color: rgba(255, 255, 255, 0.6);
+                font-weight: bold;
+            }
+    </style>
+</head>
+<body>
+    <!-- Topbar -->
+    <div class="topbar d-flex justify-content-between align-items-center">
+        <h5 class="m-0 fw-bold">SYSTEME DE GESTION DE POINTAGE (BIOENTRY)</h5>
+        <div class="small">Utilisateur: <strong>Admin </strong> | @DateTime.Now.ToString("dd/MM/yyyy")</div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse p-0">
+                <div class="sidebar-heading">NAVIGATION</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Import" asp-action="Index">
+                            <i class="bi bi-upload"></i> Importation CSV
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-speedometer2"></i> Tableau de bord
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Employes">
+                            <i class="bi bi-people"></i> Employés
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Rapports">
+                            <i class="bi bi-bar-chart"></i> Rapports & Export
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,119 @@
+﻿@model AttendanceManagement.Models.ViewModels.EmployeDetailViewModel
+
+@{
+    ViewData["Title"] = "Détails Employé";
+}
+
+<style>
+    .card-metric {
+        border: none;
+        border-radius: 4px;
+        color: white;
+        padding: 15px;
+    }
+
+    .bg-metric-blue {
+        background-color: #00acc1;
+    }
+
+    .bg-metric-yellow {
+        background-color: #ffb300;
+    }
+
+    .bg-metric-green {
+        background-color: #2e7d32;
+    }
+
+    .search-box {
+        background: white;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+    }
+</style>
+
+<div class="container-fluid p-0">
+    <!-- Zone Recherche -->
+    <div class="search-box mb-4 shadow-sm">
+        <form method="get" class="row g-2 align-items-center">
+            <input type="hidden" name="id" value="@Model.Employe.Id" />
+            <div class="col-md-2">
+                <label class="fw-bold">Matricule / ID:</label>
+                <input type="text" class="form-control fw-bold" value="@Model.Employe.Matricule" readonly />
+            </div>
+            <div class="col-md-4">
+                <label class="fw-bold">Nom Complet:</label>
+                <input type="text" class="form-control fw-bold text-primary" value="@Model.Employe.Nom" readonly />
+            </div>
+            <div class="col-md-3">
+                <label class="fw-bold">Date:</label>
+                <input type="date" name="dateFiltre" class="form-control" value="@Model.DateFiltre.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3 align-self-end">
+                <button type="submit" class="btn btn-primary w-100">Voir Pointage</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cards Metrics Header -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card-metric bg-metric-blue">
+                <small class="text-uppercase fw-bold opacity-75">Total Heures Worked</small>
+                <h3 class="m-0 mt-2 fw-bold">@Model.TotalHeuresCalculated h</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-metric bg-metric-yellow">
+                <small class="text-uppercase fw-bold opacity-75">Anomalies Détectées</small>
+                <h3 class="m-0 mt-2 fw-bold">@Model.Anomalies.Count Anomalies</h3>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-metric bg-metric-green">
+                <small class="text-uppercase fw-bold opacity-75">Status du Migration</small>
+                <h3 class="m-0 mt-2 fw-bold">Snap 13:30 OK</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau  Pointage  -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white fw-bold">
+            Détails des Pointages (Employé : @Model.Employe.Nom - Matricule : @Model.Employe.Matricule)
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle m-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date (Brute)</th>
+                        <th>Date modifiée (Snap)</th>
+                        <th>Équipement</th>
+                        <th>Tot Heure</th>
+                        <th>Action Modifier</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Pointages)
+                    {
+                        bool isSnapped = p.HeureModifiee.HasValue && p.HeureModifiee.Value != p.HeurePointage;
+                        string heureModifieeText = p.HeureModifiee.HasValue ? p.HeureModifiee.Value.ToString(@"hh\:mm\:ss") : p.HeurePointage.ToString(@"hh\:mm\:ss");
+
+                        <tr class="@(isSnapped ? "bg-warning bg-opacity-10" : "")">
+                            <td>@Model.DateFiltre.ToString("yyyy-MM-dd") @p.HeurePointage.ToString(@"hh\:mm\:ss")</td>
+                            <td class="fw-bold">@Model.DateFiltre.ToString("yyyy-MM-dd") @heureModifieeText</td>
+                            <td>@p.Equipement</td>
+                            <td class="text-success fw-bold">@Model.TotalHeuresCalculated h</td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <input type="text" class="form-control form-control-sm" style="width: 100px;" value="@heureModifieeText" />
+                                    <button class="btn btn-sm btn-primary">OK</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

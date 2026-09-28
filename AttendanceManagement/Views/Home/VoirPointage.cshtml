@@ -1,0 +1,173 @@
+﻿@model IEnumerable<AttendanceManagement.Models.Pointage>
+@{
+    ViewData["Title"] = "Détails du Pointage";
+    var employe = ViewBag.Employe as AttendanceManagement.Models.Employe;
+    DateTime date = ViewBag.DatePointage != null ? (DateTime)ViewBag.DatePointage : DateTime.Today;
+
+    var listPointages = Model != null
+        ? Model.OrderByDescending(p => p.HeurePointage).ToList()
+        : new List<AttendanceManagement.Models.Pointage>();
+
+    // Calcul du Total Heures
+    TimeSpan reposDebut = new TimeSpan(12, 29, 59);
+    TimeSpan reposFin = new TimeSpan(13, 30, 0);
+    TimeSpan reposAjuste = new TimeSpan(13, 30, 0);
+
+    TimeSpan totalHeures = TimeSpan.Zero;
+
+    for (int i = 0; i < listPointages.Count - 1; i++)
+    {
+        var pUpper = listPointages[i];
+        var pLower = listPointages[i + 1];
+
+        var equipUpper = pUpper.Equipement ?? "";
+        var equipLower = pLower.Equipement ?? "";
+
+        if (equipUpper.Contains("R2", StringComparison.OrdinalIgnoreCase) &&
+            equipLower.Contains("P2", StringComparison.OrdinalIgnoreCase))
+        {
+            TimeSpan heureUpper = pUpper.HeurePointage;
+            TimeSpan heureLower = pLower.HeurePointage;
+
+            if (heureUpper >= reposDebut && heureUpper < reposFin) heureUpper = reposAjuste;
+            if (heureLower >= reposDebut && heureLower < reposFin) heureLower = reposAjuste;
+
+            TimeSpan dureeSession = heureUpper - heureLower;
+
+            if (dureeSession > TimeSpan.Zero)
+            {
+                totalHeures += dureeSession;
+            }
+        }
+    }
+
+    TimeSpan tempsPauseFixe = new TimeSpan(1, 0, 0);
+    TimeSpan tempsEffectifTravaille = totalHeures > tempsPauseFixe
+        ? (totalHeures - tempsPauseFixe)
+        : TimeSpan.Zero;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Pointages de <strong>@(employe != null ? employe.Matricule : "") - @(employe != null ? employe.Nom : "")</strong> (@date.ToString("dd/MM/yyyy"))</h4>
+    <a asp-action="Index" class="btn btn-secondary fw-bold">
+        <i class="bi bi-arrow-left"></i> Retour
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 mb-3 bg-light">
+    <div class="card-body d-flex justify-content-between align-items-center py-3 flex-wrap gap-3">
+        <div>
+            <small class="text-muted d-block fw-bold">Total Heures :</small>
+            <span class="badge bg-dark fs-6">@totalHeures.ToString(@"hh\:mm\:ss")</span>
+        </div>
+
+        <div>
+            <small class="text-muted d-block fw-bold">Temps effectif travaillé :</small>
+            <span class="badge bg-primary fs-6">@tempsEffectifTravaille.ToString(@"hh\:mm\:ss")</span>
+        </div>
+
+        <div>
+            @if (totalHeures < new TimeSpan(9, 0, 0))
+            {
+                <span class="badge bg-danger fs-6">Durée globale inférieure à 9h</span>
+            }
+            else
+            {
+                <span class="badge bg-success fs-6">Durée globale suffisante (&gt;= 9h)</span>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-bordered table-hover align-middle m-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Heure</th>
+                    <th>Équipement</th>
+                    <th>Statut</th>
+                    <th class="text-center" style="width: 250px;">Modifier Heure</th>
+                    <th class="text-center" style="width: 120px;">Supprimer</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (listPointages.Any())
+                {
+                    @for (int i = 0; i < listPointages.Count; i++)
+                    {
+                        var item = listPointages[i];
+
+                        bool isErreur = false;
+                        if (i < listPointages.Count - 1)
+                        {
+                            var nextItem = listPointages[i + 1];
+                            if (!string.IsNullOrEmpty(item.Equipement) && item.Equipement.Equals(nextItem.Equipement, StringComparison.OrdinalIgnoreCase))
+                            {
+                                isErreur = true;
+                            }
+                        }
+
+                        <tr class="@(isErreur ? "table-warning" : "")">
+                            <td class="fw-bold text-primary fs-5">@item.HeurePointage.ToString(@"hh\:mm\:ss")</td>
+                            <td>@item.Equipement</td>
+                            <td>
+                                @if (isErreur)
+                                {
+                                    <span class="badge bg-warning text-dark">Erreur (Doublon)</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">OK</span>
+                                }
+                            </td>
+                            <td>
+                                <form asp-action="ModifierHeure" method="post" class="d-flex gap-1">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="hidden" name="employeId" value="@(employe != null ? employe.Id : 0)" />
+                                    <input type="hidden" name="date" value="@date.ToString("yyyy-MM-dd")" />
+                                    <input type="time" step="1" name="nouvelleHeure" value="@item.HeurePointage.ToString(@"hh\:mm\:ss")" class="form-control form-control-sm text-center" required />
+                                    <button type="submit" class="btn btn-warning btn-sm fw-bold">Valider</button>
+                                </form>
+                            </td>
+                            <td class="text-center">
+                                <form asp-action="SupprimerPointage" method="post" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce pointage ?');">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="hidden" name="employeId" value="@(employe != null ? employe.Id : 0)" />
+                                    <input type="hidden" name="date" value="@date.ToString("yyyy-MM-dd")" />
+                                    <button type="submit" class="btn btn-danger btn-sm fw-bold">Supprimer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted p-3">Aucun pointage trouvé.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SECTION NOTIFICATION ET REMARQUE SOUS LE TABLEAU -->
+@if (TempData["ActionMessage"] != null)
+{
+    var alertType = TempData["ActionType"]?.ToString() ?? "info";
+    <div class="alert alert-@alertType alert-dismissible fade show mt-3 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Action effectuée :</strong> @TempData["ActionMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+else
+{
+    <div class="alert alert-secondary mt-3 shadow-sm d-flex align-items-center gap-2" role="alert">
+        <i class="bi bi-info-circle-fill fs-5 text-primary"></i>
+        <span>
+            <strong>Remarque :</strong> Cliquez sur <strong>Valider</strong> après avoir modifié l'heure ou sur <strong>Supprimer</strong> pour mettre à jour les pointages de cet employé.
+        </span>
+    </div>
+}

@@ -1,0 +1,2 @@
+﻿ALTER TABLE Pointages ADD Porte NVARCHAR(MAX) NULL;
+ALTER TABLE Pointages ADD IdEquipement NVARCHAR(MAX) NULL;
