@@ -8,15 +8,17 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. Add services to the container
 builder.Services.AddControllersWithViews();
 
-// 2. Alaivo ny Connection String avy amin'ny Render na appsettings.json
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-                    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+// 2. Connection string : Render en priorité
+var connectionString =
+    Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-// 3. Raha tsy hita ny Connection String dia atsangano ny error mazava
+// 3. Vérification
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("Tsy hita ny connection string 'DefaultConnection' na 'DATABASE_URL'. Jereo ny Environment Variables ao amin'ny Render.");
+    throw new InvalidOperationException(
+        "Tsy hita ny connection string. Jereo ny Environment Variables ao amin'ny Render.");
 }
 
 // 4. Configure PostgreSQL / Npgsql
@@ -28,12 +30,14 @@ builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 
 var app = builder.Build();
 
-// 6. Application automatique des migrations au démarrage
+// 6. Application automatique des migrations
 using (var scope = app.Services.CreateScope())
 {
     try
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbContext = scope.ServiceProvider
+            .GetRequiredService<ApplicationDbContext>();
+
         dbContext.Database.Migrate();
     }
     catch (Exception ex)
