@@ -12,17 +12,17 @@ builder.Services.AddControllersWithViews();
 var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Configuration du DbContext: Tsindriana ampiasaina ny Npgsql rehefa misy Host/PostgreSQL
+// Configuration du DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    if (connectionString != null && connectionString.Contains("Host="))
+    if (!string.IsNullOrEmpty(connectionString) && connectionString.Contains("Host="))
     {
-        // Rohy PostgreSQL (Render na Cloud)
+        // Rohy PostgreSQL (Render Cloud)
         options.UseNpgsql(connectionString);
     }
     else
     {
-        // Rohy SQL Server (LocalDB)
+        // Rohy SQL Server (Local)
         options.UseSqlServer(connectionString);
     }
 });
@@ -32,13 +32,13 @@ builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 
 var app = builder.Build();
 
-// Auto-apply Database Migrations rehefa PostgreSQL no ampiasaina
+// Auto-apply Database Migrations
 using (var scope = app.Services.CreateScope())
 {
     try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        if (dbContext.Database.IsPostgreSQL())
+        if (dbContext.Database.IsNpgsql())
         {
             dbContext.Database.Migrate();
         }
