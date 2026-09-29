@@ -8,11 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
-// Mangaka connection string avy amin'ny Render Env Variable na appsettings.json
+// Récupération de la chaîne de connexion (priorité à la variable d'environnement Render)
 var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Configuration DbContext (PostgreSQL ho an'ny Render / Npgsql)
+// Configuration DbContext avec Npgsql
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -21,7 +21,7 @@ builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 
 var app = builder.Build();
 
-// Auto-apply Database Migrations amin'ny start
+// Auto-apply Database Migrations au démarrage
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
