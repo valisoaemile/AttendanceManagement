@@ -1,16 +1,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copier sy restaurer ny dependencies
-COPY ["AttendanceManagement/AttendanceManagement.csproj", "AttendanceManagement/"]
-RUN dotnet restore "AttendanceManagement/AttendanceManagement.csproj"
+# Copier ny rakitra .csproj avy eo amin'ny racine
+COPY ["AttendanceManagement.csproj", "./"]
+RUN dotnet restore "AttendanceManagement.csproj"
 
-# Copier ny rakitra rehetra sy build
+# Copier ny rakitra rehetra sy hanao publish
 COPY . .
-WORKDIR "/src/AttendanceManagement"
 RUN dotnet publish "AttendanceManagement.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Image final de production
+# Image final amin'ny execution
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
