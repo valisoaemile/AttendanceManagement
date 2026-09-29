@@ -8,19 +8,18 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
-// 1. Alaivo avy amin'ny Render environment variable na appsettings.json
-var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-                    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+// Récupération de la chaîne de connexion (Render injecte automatiquement les Env Vars dans Configuration)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
-// 2. Jereo raha misy ilay connectionString na tsia
-if (string.IsNullOrEmpty(connectionString))
-{
-    throw new InvalidOperationException("Tsy hita ny Connection String 'DefaultConnection'. Jereo ny Environment Variables ao amin'ny Render.");
-}
-
-// 3. Amboary tsara ny DbContext miaraka amin'ny PostgreSQL (Npgsql)
+// Configuration PostgreSQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    if (!string.IsNullOrEmpty(connectionString))
+    {
+        options.UseNpgsql(connectionString);
+    }
+});
 
 // Injection de dépendances
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
@@ -33,7 +32,10 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        dbContext.Database.Migrate();
+        if (dbContext.Database.IsRelational())
+        {
+            dbContext.Database.Migrate();
+        }
     }
     catch (Exception ex)
     {
