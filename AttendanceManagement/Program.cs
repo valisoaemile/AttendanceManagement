@@ -8,24 +8,38 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
-// Récupération de la chaîne de connexion (priorité à la variable d'environnement Render)
+// Récupération de la chaîne de connexion
 var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Configuration DbContext avec Npgsql
+// Configuration du DbContext : Npgsql sur Render / SQL Server ou Npgsql selon le provider
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        // En local : Utilise SQL Server (ou la base locale configurée dans appsettings.Development.json)
+        options.UseSqlServer(connectionString);
+    }
+    else
+    {
+        // Sur Render : Utilise PostgreSQL
+        options.UseNpgsql(connectionString);
+    }
+});
 
 // Injection de dépendances
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 
 var app = builder.Build();
 
-// Auto-apply Database Migrations au démarrage
-using (var scope = app.Services.CreateScope())
+// Auto-apply Database Migrations uniquement en Production (sur Render)
+if (!app.Environment.IsDevelopment())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.Migrate();
+    }
 }
 
 // Configure the HTTP request pipeline
