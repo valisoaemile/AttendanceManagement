@@ -69,8 +69,10 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Erreur de migration : {ex.Message}");
+        Console.WriteLine($"Erreur de migration : {ex}");
+        throw;
     }
+  
 }
 
 if (!app.Environment.IsDevelopment())
