@@ -4,8 +4,10 @@ using AttendanceManagement.Services.Interfaces;
 using AttendanceManagement.Services;
 using Npgsql;
 
-var builder = WebApplication.CreateBuilder(args);
+// Permet à PostgreSQL d'accepter les dates au format local sans erreur UTC
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
+var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 // Connection string avy amin'ny Render
@@ -72,7 +74,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"Erreur de migration : {ex}");
         throw;
     }
-  
 }
 
 if (!app.Environment.IsDevelopment())
