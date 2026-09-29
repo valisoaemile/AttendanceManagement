@@ -5,37 +5,36 @@ using AttendanceManagement.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// 1. Add services to the container
 builder.Services.AddControllersWithViews();
 
-// Récupération de la chaîne de connexion (Render injecte automatiquement les Env Vars dans Configuration)
+// 2. Alaivo ny Connection String avy amin'ny Render na appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+                    ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+                    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
 
-// Configuration PostgreSQL
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// 3. Raha tsy hita ny Connection String dia atsangano ny error mazava
+if (string.IsNullOrEmpty(connectionString))
 {
-    if (!string.IsNullOrEmpty(connectionString))
-    {
-        options.UseNpgsql(connectionString);
-    }
-});
+    throw new InvalidOperationException("Tsy hita ny connection string 'DefaultConnection' na 'DATABASE_URL'. Jereo ny Environment Variables ao amin'ny Render.");
+}
 
-// Injection de dépendances
+// 4. Configure PostgreSQL / Npgsql
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// 5. Injection de dépendances
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
 
 var app = builder.Build();
 
-// Application automatique des migrations au démarrage
+// 6. Application automatique des migrations au démarrage
 using (var scope = app.Services.CreateScope())
 {
     try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        if (dbContext.Database.IsRelational())
-        {
-            dbContext.Database.Migrate();
-        }
+        dbContext.Database.Migrate();
     }
     catch (Exception ex)
     {
@@ -43,7 +42,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configuration du pipeline HTTP
+// 7. Configuration du pipeline HTTP
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
