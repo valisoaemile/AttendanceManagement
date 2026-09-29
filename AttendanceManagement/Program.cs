@@ -8,18 +8,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllersWithViews();
 
-// Récupération de la chaîne de connexion depuis les variables d'environnement
+// 1. Alaivo avy amin'ny Render environment variable na appsettings.json
 var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
                     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Configuration du DbContext pour PostgreSQL sur Render
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// 2. Jereo raha misy ilay connectionString na tsia
+if (string.IsNullOrEmpty(connectionString))
 {
-    if (!string.IsNullOrEmpty(connectionString))
-    {
-        options.UseNpgsql(connectionString);
-    }
-});
+    throw new InvalidOperationException("Tsy hita ny Connection String 'DefaultConnection'. Jereo ny Environment Variables ao amin'ny Render.");
+}
+
+// 3. Amboary tsara ny DbContext miaraka amin'ny PostgreSQL (Npgsql)
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
 // Injection de dépendances
 builder.Services.AddScoped<ICsvImportService, CsvImportService>();
